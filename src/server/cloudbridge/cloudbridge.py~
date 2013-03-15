@@ -1,0 +1,73 @@
+# Author: Arpit Gupta
+
+
+import socket
+import threading
+import SocketServer
+
+class IQscheduler(threading.Thread):
+    def __init__(self, name):
+        self.name = name
+    
+    def run(self):
+        print "Scheduler Thread started"
+        
+        print "Scheduler Thread exiting"
+        
+
+class ThreadedTCPRequestHandler(SocketServer.BaseRequestHandler):
+
+    def handle(self):
+        data = self.request.recv(1024)
+        cur_thread = threading.current_thread()
+        response = "{}: {}".format(cur_thread.name, data)
+        
+        # Logic for policy check
+        policyCheck()
+        # Logic for instruction Queue insertion
+        success = queueOps()
+        if success == 0:
+            response = "S"
+        else:
+            response = "F"
+        self.request.sendall(response)
+
+class ThreadedTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
+    pass
+
+def policyCheck():
+    print "Conduct policy check"
+    
+def queueOps():
+    print "Queue Operation completed"
+    return 0
+    
+
+if __name__ == "__main__":
+    threadlist = []
+    
+    # Initialize the server for listening to mobile platforms requests
+
+    HOST, PORT = "localhost", 9998
+    server = ThreadedTCPServer((HOST, PORT), ThreadedTCPRequestHandler)
+    ip, port = server.server_address
+    server_thread = threading.Thread(target=server.serve_forever)
+    threadlist.append(server_thread)
+    server_thread.daemon = True
+    server_thread.start()
+    print "Server running for thread:", server_thread.name
+   
+    
+    # Now server has started, start the scheduler thread
+    
+    schedThread = IQscheduler("sched")
+    schedThread.daemon = True
+    schedThread.start()
+    
+
+    # 
+    
+    
+    
+    server.serve_forever()
+    

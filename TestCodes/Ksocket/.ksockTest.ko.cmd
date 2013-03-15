@@ -1,0 +1,1 @@
+cmd_/home/mpaas/mPaaS_Codebase/TestCodes/Ksocket/ksockTest.ko := ld -r -m elf_i386 -T /usr/src/linux-headers-3.5.0-17-generic/scripts/module-common.lds --build-id  -o /home/mpaas/mPaaS_Codebase/TestCodes/Ksocket/ksockTest.ko /home/mpaas/mPaaS_Codebase/TestCodes/Ksocket/ksockTest.o /home/mpaas/mPaaS_Codebase/TestCodes/Ksocket/ksockTest.mod.o

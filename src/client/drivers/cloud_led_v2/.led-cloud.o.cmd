@@ -1,0 +1,1 @@
+cmd_/home/mpaas/mPaaS/repos/csc_724_mpaas/src/client/drivers/cloud_led_v2/led-cloud.o := ld -m elf_i386   -r -o /home/mpaas/mPaaS/repos/csc_724_mpaas/src/client/drivers/cloud_led_v2/led-cloud.o /home/mpaas/mPaaS/repos/csc_724_mpaas/src/client/drivers/cloud_led_v2/cloud-led.o /home/mpaas/mPaaS/repos/csc_724_mpaas/src/client/drivers/cloud_led_v2/ksocket.o 
