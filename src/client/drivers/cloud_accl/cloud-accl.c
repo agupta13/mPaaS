@@ -44,10 +44,7 @@ static ssize_t write_enable(struct device *dev,
     sscanf(buffer, "%d", &en);
     printk ("write_enable callled with prior enable_update:%d\n", enable_update);
     enable_update = en;
-    /*while(enable_update!=0){
-    	
-    }*/
-    
+
     printk ("write_enable callled with en:%d, enable_update:%d\n", en, enable_update);
     /* Report relative ax via the
        event interface */
@@ -92,15 +89,15 @@ static ssize_t write_enable(struct device *dev,
 	printk("connected to : %s %d\n", tmp, ntohs(addr_srv.sin_port));
 	kfree(tmp);
 	
-	len = sprintf(buf, "%s", "This is accl\n");
+	len = sprintf(buf, "%s", "S\n");
     ksend(sockfd_cli, buf, len, 0);
 	
 	krecv(sockfd_cli, buf, 1024, 0);
-	printk("got message : %s\n", buf);
+	printk("got message : %s", buf);
 
 	
 	
-	printk(KERN_ALERT "Closing dell led socket now!\n");
+	printk(KERN_ALERT "Closing dell led socket now!\n\n");
 	kclose(sockfd_cli);
 #ifdef KSOCKET_ADDR_SAFE
 	set_fs(old_fs);
@@ -108,7 +105,7 @@ static ssize_t write_enable(struct device *dev,
     
     
     
-    return 0;
+    return count;
 }
 
 /* Attach the sysfs write method */
