@@ -23,3 +23,9 @@ unload:
 	
 perm:
 	sudo chmod 0777 /sys/devices/platform/cloudaccl/ax
+	
+echo1:
+	echo 1 > /sys/devices/platform/cloudaccl/ax
+
+echo0:
+	echo 0 > /sys/devices/platform/cloudaccl/ax
