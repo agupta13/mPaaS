@@ -21,9 +21,10 @@ static int port = 9978;
 
 struct cldaccl{
     ksocket_t sockfd_globl;
+    int rate;
     struct mutex mutex; 
-
 };
+
 static struct cldaccl *ca;
 static struct task_struct *thread1;
 
@@ -37,8 +38,9 @@ int thread_fn() {
         // ksocket things
             
         struct sockaddr_in addr_srv;
-        int char_size = 21;
-        char buf[char_size], *tmp;
+        int char_size = 21,rate = 50, recv_size;
+        char buf[char_size], *tmp, bufs[1024];
+        char extra[10];
         int addr_len,len,ax,ay,az,count,axs,ays,azs;
         //float adx, ady, adz;
         
@@ -67,22 +69,19 @@ int thread_fn() {
         if (kconnect(ca->sockfd_globl, (struct sockaddr*)&addr_srv, addr_len) < 0){
             printk("connect failed\n");
             return -1;
-        }       
+        } 
 
         tmp = inet_ntoa(addr_srv.sin_addr);
         printk("connected to : %s %d\n", tmp, ntohs(addr_srv.sin_port));
         kfree(tmp);
-        len = sprintf(buf, "%s", "S\n");
-        ksend(ca->sockfd_globl, buf, len, 0);
-        krecv(ca->sockfd_globl, buf, char_size, 0);
-        printk("got message : %s", buf);
-
         
+        rate = ca->rate;
+        len = sprintf(bufs, "%s%d", "Req:",rate);        
+        ksend(ca->sockfd_globl, bufs, len, 0);
         
-        
-        //sockfd_cli = ksocket(AF_INET, SOCK_STREAM, 0);
-        while(1){
-            
+        //krecv(ca->sockfd_globl, buf, char_size, 0);
+        //printk("got message : %s", buf); 
+        while(1){            
             if(enable_update == 0){
                 printk(KERN_INFO "thread1 break\n");
                 printk(KERN_ALERT "Closing accl socket now!\n\n");
@@ -92,35 +91,27 @@ int thread_fn() {
                     set_fs(old_fs);
                 #endif    
                 break;
-            } 
-            char axc[2], ayc[2], azc[2], extra[10];
-            krecv(ca->sockfd_globl, buf, char_size, 0);
-            count = sscanf(buf, "%d,%d,%d,%d,%d,%d\n%s",&ax,&axs,&ay,&ays,&az,&azs,extra);
-            //printk("got while message : %s\n",buf);
-            //printk("ax:%f, ay:%f, az:%f, extra:%s\n", adx,ady,adz,extra); 
-            //printk("ax:%d, ay:%d, az:%d, extra:%s\n", ax,ay,az,extra);
-                 
-            printk("axs:%d, ays:%d, azs:%d\n", axs,ays,azs);
-            if(axs==1)
-                ax *= -1;
-            if(ays==1)
-                ay *= -1;
-            if(azs==1)
-                az *= -1;
+            }            
+            if((recv_size = krecv(ca->sockfd_globl, buf, char_size, 0))>0){
+                count = sscanf(buf, "%d,%d,%d,%d,%d,%d\n%s",&ax,&axs,&ay,&ays,&az,&azs,extra);                    
+                //printk("axs:%d, ays:%d, azs:%d\n", axs,ays,azs);
+                //Apply logic for sign
+                if(axs==1)
+                    ax *= -1;
+                if(ays==1)
+                    ay *= -1;
+                if(azs==1)
+                    az *= -1;                
+                input_report_abs(cloudaccl_input_dev, ABS_X, ax);
+                input_report_abs(cloudaccl_input_dev, ABS_Y, ay);
+                input_report_abs(cloudaccl_input_dev, ABS_Z, az);
+                input_sync(cloudaccl_input_dev); 
+                printk("Reported::ax:%d,ay:%d,az:%d\n", ax,ay,az);   
             
-            input_report_abs(cloudaccl_input_dev, ABS_X, ax);
-            input_report_abs(cloudaccl_input_dev, ABS_Y, ay);
-            input_report_abs(cloudaccl_input_dev, ABS_Z, az);
-            input_sync(cloudaccl_input_dev); 
-            printk("Reported::ax:%d,ay:%d,az:%d\n", ax,ay,az);         
-            //input_report_abs(cloudaccl_input_dev, ABS_X, 0); 
-            //input_report_abs(cloudaccl_input_dev, ABS_Y, 0); 
+            }
             schedule();
-        }
-        
+        }        
     }
-    
-
     return 0;
 }
 
@@ -140,8 +131,7 @@ static ssize_t write_enable(struct device *dev,
     int en,x,y, enable_prev;
     x=0;
     y=1;
-    enable_prev = enable_update;
-    
+    enable_prev = enable_update;    
     sscanf(buffer, "%d", &en);
     //printk ("write_enable, prior enable_update:%d\n", enable_update);
     
@@ -183,12 +173,27 @@ static ssize_t write_enable(struct device *dev,
     }    
 }
 
-/* Attach the sysfs write method */
-DEVICE_ATTR(ax, 0644, read_enable, write_enable);
+/* Attach the "enable" sysfs  */
+DEVICE_ATTR(enable, 0644, read_enable, write_enable);
+
+static ssize_t write_rate(struct device *dev,
+          struct device_attribute *attr,
+          const char *buffer, size_t count){
+    int x;
+    sscanf(buffer, "%d", &x);
+    // Need to think if I need a seprate mutex for this rate thing.
+    mutex_lock(&ca->mutex);
+    ca->rate = x;
+    mutex_unlock(&ca->mutex);
+    return count;
+}
+
+/* Attach the "rate" sysfs  */
+DEVICE_ATTR(rate, 0644, NULL, write_rate);
 
 /* Attribute Descriptor */
 static struct attribute *cloudaccl_attrs[] = {
-    &dev_attr_ax.attr,
+    &dev_attr_enable.attr,
     NULL
 };
 
@@ -227,16 +232,12 @@ int __init cloudaccl_init(void){
         printk("Bad input_allocate_device()\n"); return -ENOMEM;
     }
 
-    /* Announce that the virtual mouse will generate
-       relative ax */
-    //set_bit(EV_REL, cloudaccl_input_dev->evbit);
-    //set_bit(REL_X, cloudaccl_input_dev->relbit);
-    //set_bit(REL_Y, cloudaccl_input_dev->relbit);
+
     cloudaccl_input_dev->name = "Cloud Accelerometer";
     cloudaccl_input_dev->evbit[0] = BIT_MASK(EV_ABS);
-    input_set_abs_params(cloudaccl_input_dev, ABS_X,-1000,1000,3,3);
-    input_set_abs_params(cloudaccl_input_dev, ABS_Y,-1000,1000,3,3);
-    input_set_abs_params(cloudaccl_input_dev, ABS_Z,-1000,1000,3,3);
+    input_set_abs_params(cloudaccl_input_dev, ABS_X,-9999,9999,3,3);
+    input_set_abs_params(cloudaccl_input_dev, ABS_Y,-9999,9999,3,3);
+    input_set_abs_params(cloudaccl_input_dev, ABS_Z,-9999,9999,3,3);
     
     /* Register with the input subsystem */
     input_register_device(cloudaccl_input_dev);

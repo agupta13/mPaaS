@@ -22,12 +22,16 @@ unload:
 	sudo rmmod ./$(TARGET_MODULE_CLOUD).ko
 	
 perm:
-	sudo chmod 0777 /sys/devices/platform/cloudaccl/ax
+	sudo chmod 0777 /sys/devices/platform/cloudaccl/enable
+	sudo chmod 0777 /sys/devices/platform/cloudaccl/rate
 	
 echo1:
-	echo 1 > /sys/devices/platform/cloudaccl/ax
+	echo 1 > /sys/devices/platform/cloudaccl/enable
 
 echo0:
-	echo 0 > /sys/devices/platform/cloudaccl/ax
+	echo 0 > /sys/devices/platform/cloudaccl/enable
+	
+rate100:
+	echo 100 > /sys/devices/platform/cloudaccl/rate
 	
 
