@@ -21,5 +21,14 @@ load:
 unload:
 	sudo rmmod ./$(TARGET_MODULE_CLOUD).ko
 	
-unload:
+perm:
 	sudo chmod 0777 /sys/devices/platform/cloudaccl/ax
+	
+echo1:
+	echo 1 > /sys/devices/platform/cloudaccl/ax
+
+echo0:
+	echo 0 > /sys/devices/platform/cloudaccl/ax
+	
+comp:
+    make clean && make && make load && make perm && make echo0 && make echo1 && make echo0 && make unload

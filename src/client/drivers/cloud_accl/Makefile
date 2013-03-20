@@ -29,3 +29,5 @@ echo1:
 
 echo0:
 	echo 0 > /sys/devices/platform/cloudaccl/ax
+	
+
