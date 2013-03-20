@@ -17,7 +17,7 @@
 #include <net/sock.h>
 #include "ksocket.h"
 
-static int port = 9988;
+static int port = 9978;
 
 struct cldaccl{
     ksocket_t sockfd_globl;
@@ -99,8 +99,20 @@ int thread_fn() {
             //printk("got while message : %s\n",buf);
             //printk("ax:%f, ay:%f, az:%f, extra:%s\n", adx,ady,adz,extra); 
             //printk("ax:%d, ay:%d, az:%d, extra:%s\n", ax,ay,az,extra);
-            printk("ax:%d, ay:%d, az:%d\n", ax,ay,az);     
-            printk("axs:%d, ays:%d, azs:%d\n", axs,ays,azs);          
+                 
+            printk("axs:%d, ays:%d, azs:%d\n", axs,ays,azs);
+            if(axs==1)
+                ax *= -1;
+            if(ays==1)
+                ay *= -1;
+            if(azs==1)
+                az *= -1;
+            
+            input_report_abs(cloudaccl_input_dev, ABS_X, ax);
+            input_report_abs(cloudaccl_input_dev, ABS_Y, ay);
+            input_report_abs(cloudaccl_input_dev, ABS_Z, az);
+            input_sync(cloudaccl_input_dev); 
+            printk("Reported::ax:%d,ay:%d,az:%d\n", ax,ay,az);         
             //input_report_abs(cloudaccl_input_dev, ABS_X, 0); 
             //input_report_abs(cloudaccl_input_dev, ABS_Y, 0); 
             schedule();
@@ -145,6 +157,7 @@ static ssize_t write_enable(struct device *dev,
     else if(enable_prev == 0 && enable_update ==1){
         // It was not working, but we need to start the update process now
         printk ("case1:\n");
+        
         char our_thread[8]="thread1";
         thread1 = kthread_create(thread_fn,NULL,our_thread);
         if((thread1))
@@ -216,9 +229,15 @@ int __init cloudaccl_init(void){
 
     /* Announce that the virtual mouse will generate
        relative ax */
-    set_bit(EV_REL, cloudaccl_input_dev->evbit);
-    set_bit(REL_X, cloudaccl_input_dev->relbit);
-    set_bit(REL_Y, cloudaccl_input_dev->relbit);
+    //set_bit(EV_REL, cloudaccl_input_dev->evbit);
+    //set_bit(REL_X, cloudaccl_input_dev->relbit);
+    //set_bit(REL_Y, cloudaccl_input_dev->relbit);
+    cloudaccl_input_dev->name = "Cloud Accelerometer";
+    cloudaccl_input_dev->evbit[0] = BIT_MASK(EV_ABS);
+    input_set_abs_params(cloudaccl_input_dev, ABS_X,-1000,1000,3,3);
+    input_set_abs_params(cloudaccl_input_dev, ABS_Y,-1000,1000,3,3);
+    input_set_abs_params(cloudaccl_input_dev, ABS_Z,-1000,1000,3,3);
+    
     /* Register with the input subsystem */
     input_register_device(cloudaccl_input_dev);
 
