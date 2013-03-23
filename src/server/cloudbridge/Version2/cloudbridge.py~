@@ -38,12 +38,12 @@ class ThreadedTCPRequestHandler_mc(SocketServer.BaseRequestHandler):
         for i in range(0,Ndev):
             dev.append(dlist[i+2])
             print "dev:",dev
-        
+        globalCloud.mac = mac
         # Now time to do the hash table stuff
         #if(mobileClientCheck(mac)):
         #    print "Mac not in table"
         if(mobileClientCheck(mac)):
-            My_Mgmt_Obj = MgmtClass.MgmtObj(dev, platform,0,[])
+            My_Mgmt_Obj = MgmtClass.MgmtObj(mac,dev, platform,0,[])
             globalCloud.MgmtHash[mac] = My_Mgmt_Obj
         
         ## Create ports numbers and send that back to the client
@@ -59,7 +59,7 @@ class ThreadedTCPRequestHandler_mc(SocketServer.BaseRequestHandler):
                 response = response+str(portn)+","
             	    
 		print response  
-		self.request.sendall(response)
+		
 		  
         # Time to create socket on these ports
         socks = []
@@ -70,9 +70,10 @@ class ThreadedTCPRequestHandler_mc(SocketServer.BaseRequestHandler):
             soc_dev.listen(1)
             socks.append(soc_dev)
 		    
-	    globalCloud.MgmtHash[mac].conn = socks		    
+	    #globalCloud.MgmtHash[mac].conn = socks		   
+	     
             
-             
+        self.request.sendall(response)     
         for i in range(0,len(ports)):
             conn, addr = socks[i].accept()
             globalCloud.MgmtHash[mac].conn.append(conn)
@@ -92,24 +93,57 @@ class ThreadedTCPRequestHandler_cp(SocketServer.BaseRequestHandler):
     def handle(self):
         print "Handler: Cloud Platform"
         data = self.request.recv(1024)
-        cur_thread = threading.current_thread()        
+        instr_rec = data.split(',')
+        print instr_rec
+        devid = instr_rec[0]
+        if devid=="02":
+            devtype = 0
+        else:
+            devtype = 1
+        instr_code = instr_rec[1]
+        Nparams = len(instr_rec)-2        
+        params=[]
+        for i in range(0,Nparams):
+            params.append(instr_rec[i+2])
+              
         self.tid = next(iid)
         e = threading.Event()
-        instr = globalCloud.Instruction(0,0,0,0,self.tid, e, 0)
+        instr = globalCloud.Instruction(0,devid,instr_code,0,self.tid, e, 0,params,devtype)
         
         ## Logic for policy check
-        #priority = policyCloud.policyCheck()
+        priority = policyCloud.policyCheck()
         
         ## Logic for instruction Queue insertion
-        success = 0
-        #success = InstructionHandling.queueOps(instr, priority)
+        portd = InstructionHandling.queueOps(instr, priority)
+        print "Start server over the port:",portd
         
-        if success == 0:
-            response = "S"
+        HOST, PORT = "localhost",portd
+        soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        soc.bind((HOST, PORT))
+        soc.listen(1)
+        conn, addr = soc.accept()
+        if(devtype==0):            
+            print 'Received Connection from : ', addr
+            data = conn.recv(1024)
+            print "Received:",data
+            self.request.sendall(data)
+            soc.close()            
         else:
-            response = "F"
+            print 'Received Connection from : ', addr
+            while(1):
+                data = conn.recv(1024)
+                response = "1000,1,1000,0,1000,0\n" 
+                try:
+                    self.request.sendall(response)
+                    #self.wfile.write(response)
+                except IOError as e:
+                    print "WARN: socket closed unexpectedly"
+                    break
         
-        self.request.sendall(response)
+        
+
+        
+        
 
 class ThreadedTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
     pass

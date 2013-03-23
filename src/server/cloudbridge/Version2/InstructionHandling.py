@@ -5,6 +5,7 @@ from itertools import count
 import globalCloud
 import socket
 import sys
+import random
 
 
 ## Instruction Queue Scheduler thread
@@ -20,10 +21,11 @@ class IQscheduler(threading.Thread):
                 print "Qsize greater than zero, qsize: "+str(globalCloud.IQ.qsize())
                 instr = globalCloud.IQ.get()
                 ret = exec_instr(instr)
-                if ret is 0:
-                    instr.success = 1
-                else:
+                if ret is -1:
                     instr.success = 0
+                else:
+                    instr.success = 1
+                instr.port = ret
                 instr.event.set()
                 print "Instruction for thread: "+str(instr.tid)
         
@@ -32,38 +34,32 @@ class IQscheduler(threading.Thread):
 def exec_instr(instr):
     print "Instr exec function called"
     minstr = map_instr(instr) # returns mapped instruction
+    mac = globalCloud.mac
+    conn = globalCloud.MgmtHash[mac].conn
+    print conn
+    porti = random.randint(1, 1000)+20000
+    data=str(minstr.instr)+","+str(porti)
+    print "Sending:",data
+    # in future use a library to handle this thing
+    if instr.devid=="02":
+        ind = 0
+    else:
+        ind = 0
     
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    HOST, PORT = "localhost", 9198
-    data = ""+str(minstr.instr)
-    print "Sending:     {}".format(data)
-    try:
-        # Connect to server and send data
-        sock.connect((HOST, PORT))
-        sock.sendall(data + "\n")
-        
-        # Receive data from the server and shut down
-        received = sock.recv(1024)
-    finally:
-        sock.close()
-    print "Received: {}".format(received)
-    return 0
+    conn[ind].sendall(data)
+    return porti
 
 def map_instr(instr):
     print "Mapping function called"
-    minstr = instr  # need more sophisticated processing
-    
+    minstr = instr  # need more sophisticated processing    
     return minstr
     
 def queueOps(instr, p):
-    print "Queue Operation completed"
+    print "Queue Operation Initiated"
     instr.event.clear()
     globalCloud.IQ.put(instr,p)
     print "Queue Operation completed, qsize:"+str(globalCloud.IQ.qsize())
     instr.event.wait()
-    if instr.success is 1:
-        ret = 0
-    else:
-        ret = -1
     print "After Wait Queue Operation completed, qsize:"+str(globalCloud.IQ.qsize())
+    ret = instr.port
     return ret

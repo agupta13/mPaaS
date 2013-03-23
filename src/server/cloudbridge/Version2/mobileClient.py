@@ -1,12 +1,13 @@
 import socket
 import threading
+from time import sleep
 
 
 if __name__ == "__main__":
     HOST, PORT = "localhost", 9006
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     print "send data in mac,platform,devid,..."
-    data = "00:00,android,01,02"
+    data = "00:00,android,01"
     try:
         sock.connect((HOST, PORT))
         sock.sendall(data)
@@ -27,6 +28,25 @@ if __name__ == "__main__":
                 sock.connect((HOST, PORT))
                 sock.sendall(data)
                 print "Sent:     {}".format(data) 
+                while True:
+                    received = sock.recv(256)
+                    if len(received)>0:
+                        print received
+                        instr = received.split(',')
+                        portd=instr[1]
+                        sleep(1)
+                        HOST, PORT = "localhost", int(portd)
+                        sockd = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                        datad = "All's Well"
+                        try:
+                            sockd.connect((HOST, PORT))
+                            sockd.sendall(datad)
+                        finally:
+                            sockd.close()
+                        
+
+                    if received == "close":
+                        break
                 # for now
                 sock.close() 
             finally:

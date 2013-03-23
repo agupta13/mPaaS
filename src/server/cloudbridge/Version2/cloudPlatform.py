@@ -1,8 +1,9 @@
 import socket
 import sys
 
-HOST, PORT = "localhost", 9006
-data = " ".join(sys.argv[1:])
+HOST, PORT = "localhost", 9998
+# devid,instr,params...
+data = "02,led_on,10,10"
 
 # Create a socket (SOCK_STREAM means a TCP socket)
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -10,7 +11,7 @@ sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 try:
     # Connect to server and send data
     sock.connect((HOST, PORT))
-    sock.sendall(data + "\n")
+    sock.sendall(data)
     
     # Receive data from the server and shut down
     received = sock.recv(1024)
