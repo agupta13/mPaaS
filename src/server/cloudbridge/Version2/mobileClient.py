@@ -33,8 +33,8 @@ if __name__ == "__main__":
                     if len(received)>0:
                         print received
                         instr = received.split(',')
-                        portd=instr[1]
-                        sleep(1)
+                        portd=instr[3]
+                        sleep(2)
                         HOST, PORT = "localhost", int(portd)
                         sockd = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                         datad = "All's Well"

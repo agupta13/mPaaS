@@ -38,7 +38,7 @@ def exec_instr(instr):
     conn = globalCloud.MgmtHash[mac].conn
     print conn
     porti = random.randint(1, 1000)+20000
-    data=str(minstr.instr)+","+str(porti)
+    data=str(minstr.instr)+",800,200,"+str(porti)
     print "Sending:",data
     # in future use a library to handle this thing
     if instr.devid=="02":
