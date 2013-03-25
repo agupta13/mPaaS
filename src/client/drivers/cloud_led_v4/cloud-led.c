@@ -23,8 +23,11 @@
 #include <linux/net.h>
 #include <net/sock.h>
 #include "ksocket.h"
-#define DEBUG 1
+#define DEBUG 0
 static int port = 9998;
+static char address[] = "127.0.0.1";
+static int debug = 0;
+static int ctr = 0;
 
 MODULE_AUTHOR("Joice,Arpit");
 MODULE_DESCRIPTION("Basic LED Control Driver");
@@ -54,10 +57,11 @@ static int led_perform_fn(u8 length,
 		u8 on_time,
 		u8 off_time)
 {
-	#ifdef DEBUG
-	printk(KERN_ALERT "In perform function\n");
-	printk(KERN_ALERT "Creating Socket now\n");
-	#endif
+	if (debug==1) {
+	    printk(KERN_ALERT "In perform function\n");
+	    printk(KERN_ALERT "Creating Socket now\n");
+    }
+	
 	ksocket_t sockfd_cli;
 	struct sockaddr_in addr_srv;
 	char buf[1024], *tmp;
@@ -74,11 +78,12 @@ static int led_perform_fn(u8 length,
 	memset(&addr_srv, 0, sizeof(addr_srv));
 	addr_srv.sin_family = AF_INET;
 	addr_srv.sin_port = htons(port);
-	addr_srv.sin_addr.s_addr = inet_addr("152.14.93.234");;
+	addr_srv.sin_addr.s_addr = inet_addr(address);;
 	addr_len = sizeof(struct sockaddr_in);
 	
 	sockfd_cli = ksocket(AF_INET, SOCK_STREAM, 0);
-	printk("sockfd_cli = 0x%p\n", sockfd_cli);
+	if (debug==1) 
+	    printk("sockfd_cli = 0x%p\n", sockfd_cli);
 	if (sockfd_cli == NULL)
 	{
 		printk("socket failed\n");
@@ -91,39 +96,46 @@ static int led_perform_fn(u8 length,
 	}
 
 	tmp = inet_ntoa(addr_srv.sin_addr);
-	printk("connected to : %s %d\n", tmp, ntohs(addr_srv.sin_port));
+	if (debug==1) 
+	    printk("connected to : %s %d\n", tmp, ntohs(addr_srv.sin_port));
 	kfree(tmp);
 	
 	
-	printk(KERN_ALERT "Command called : %d", command);
+	if (debug==1) 
+        printk(KERN_ALERT "Command called : %d", command);
 	switch(command){
 	//Begin timing here
 		case 16:
 		//LED ON
 		len = sprintf(buf, "%s", "02,ON,10,10");
-	    	printk(KERN_ALERT "Sending:%s",buf);
+    	if (debug==1) 
+    	    printk(KERN_ALERT "Sending:%s",buf);
 		ksend(sockfd_cli, buf, len, 0);
 		break;
 
 		case 17:
 		//LED OFF
 		len = sprintf(buf, "%s", "02,OFF,10,10");
-	    	printk(KERN_ALERT "Sending:%s",buf);
+    	if (debug==1) 
+    	    printk(KERN_ALERT "Sending:%s",buf);
 		ksend(sockfd_cli, buf, len, 0);
 		break;
 
 		case 18:
 		//LED BLINK
 		len = sprintf(buf, "%s", "02,BLINK,10,10");
-	    	printk(KERN_ALERT "Sending:%s",buf);
+    	if (debug==1) 
+    	    printk(KERN_ALERT "Sending:%s",buf);
 		ksend(sockfd_cli, buf, len, 0);		
 	}
             
 	krecv(sockfd_cli, buf, 1024, 0);
-	printk("got message : %s\n", buf);
+	if (debug==1) 
+	    printk("got message : %s\n", buf);
 	
 	//End timing here
-	printk(KERN_ALERT "Closing dell led socket now!\n");
+	if (debug==1) 
+	    printk(KERN_ALERT "Closing dell led socket now!\n");
 	kclose(sockfd_cli);
 #ifdef KSOCKET_ADDR_SAFE
 		set_fs(old_fs);
@@ -135,9 +147,10 @@ static int led_perform_fn(u8 length,
 
 static int led_on(void)
 {
-	#ifdef DEBUG
-	printk(KERN_ALERT "LED On!!!!!!\n");
-	#endif
+	
+	if (debug==1) 
+	    printk(KERN_ALERT "LED On!!!!!!\n");
+
 	return led_perform_fn(3,	/* Length of command */
 		INTERFACE_ERROR,	/* Init to  INTERFACE_ERROR */
 		DEVICE_ID_PANEL_BACK,	/* Device ID */
@@ -148,9 +161,9 @@ static int led_on(void)
 
 static int led_off(void)
 {
-	#ifdef DEBUG
-	printk(KERN_ALERT "In function LED Off!\n");
-	#endif
+	if (debug==1) 
+	    printk(KERN_ALERT "In function LED Off!\n");
+
 	return led_perform_fn(3,	/* Length of command */
 		INTERFACE_ERROR,	/* Init to  INTERFACE_ERROR */
 		DEVICE_ID_PANEL_BACK,	/* Device ID */
@@ -174,27 +187,33 @@ static void led_set(struct led_classdev *led_cdev,
 		enum led_brightness value)
 {
 	struct timeval before, after, mid;
-	#ifdef DEBUG
-	printk(KERN_ALERT "LED Set Called!!!!!!\n");
-	printk(KERN_ALERT "!!!!VALUE : \%dn", value);
-	printk(KERN_ALERT "!!!!Begin Timer here!!!!!\n");
-	#endif
+
+	if (debug==1) {
+	    printk(KERN_ALERT "LED Set Called!!!!!!\n");
+	    printk(KERN_ALERT "!!!!VALUE : \%dn", value);
+	    printk(KERN_ALERT "!!!!Begin Timer here!!!!!\n");
+    }
+	
 
 	//Begin timer here
 	do_gettimeofday(&before);
 	do_gettimeofday(&mid);
 	
 	unsigned long elapsed_mid = (mid.tv_sec-before.tv_sec)*1000000 + mid.tv_usec-before.tv_usec;
-	printk(KERN_ALERT "!!!Mid Latency : %ld\n", elapsed_mid);
-	printk(KERN_ALERT "yo !!! Timestamp here : %ld", before.tv_sec);
+	if (debug==1) {
+	    printk(KERN_ALERT "!!!Mid Latency : %ld\n", elapsed_mid);
+	    printk(KERN_ALERT "yo !!! Timestamp here : %ld", before.tv_sec);
+    }
 	if (value == LED_OFF)
 		led_off();
 	else
 		led_on();
-	printk(KERN_ALERT "End of set function here\n");
+	if (debug==1) 
+	    printk(KERN_ALERT "End of set function here\n");
 	do_gettimeofday(&after);
 	unsigned long elapsed = (after.tv_sec-before.tv_sec)*1000000 + after.tv_usec-before.tv_usec;
-	printk(KERN_ALERT "Latency : %ld\n", elapsed);
+	ctr++;
+	printk(KERN_ALERT "L: %d,%ld\n", ctr,elapsed);
 }
 
 static int dell_led_blink(struct led_classdev *led_cdev,
@@ -238,9 +257,9 @@ static struct led_classdev led = {
 static int __init led_init(void)
 {
 	int error = 0;
-	#ifdef DEBUG
-	printk(KERN_ALERT "Init called\n");
-	#endif
+	if (debug==1) 
+	    printk(KERN_ALERT "Init called\n");
+
 	/*if (!wmi_has_guid(DELL_LED_BIOS_GUID))
 		return -ENODEV;
 
@@ -260,10 +279,11 @@ static int __init led_init(void)
 
 static void __exit led_exit(void)
 {
-	#ifdef DEBUG
-	printk(KERN_ALERT "Exit called\n");
-	printk(KERN_ALERT "Turning off led now...\n");
-	#endif
+	if (debug==1) {
+	    printk(KERN_ALERT "Exit called\n");
+	    printk(KERN_ALERT "Turning off led now...\n");
+    }
+
 	led_classdev_unregister(&led);
 	led_off();
 }

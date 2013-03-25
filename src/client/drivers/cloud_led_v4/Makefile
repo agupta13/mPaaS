@@ -31,5 +31,17 @@ load:
 unload:
 	sudo rmmod ./$(TARGET_MODULE_CLOUD).ko
 
+perm:
+	sudo chmod 0777 /sys/class/leds/LED/brightness	
+    
+echo1:
+	echo 1 > /sys/class/leds/LED/brightness
+
+echo0:
+	echo 0 > /sys/class/leds/LED/brightness
+	
+rate100:
+	echo 100 > /sys/devices/platform/cloudaccl/rate
+
 endif
 
