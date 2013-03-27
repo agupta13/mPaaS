@@ -8,7 +8,7 @@ public abstract class Device implements Runnable{
 	protected String devName;
 	protected int instructionPort;
 	protected Context context;
-	protected static String TAG;
+	protected String TAG;
 	
 	protected Device(int dId, String dName, Context c){
 		

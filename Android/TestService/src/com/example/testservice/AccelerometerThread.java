@@ -68,12 +68,29 @@ public class AccelerometerThread extends Device implements SensorEventListener {
 	        		buf.append(c);
 	        	}
 	        	inputLine = buf.toString();
-	        	if(inputLine.equals("close"))
+	        	Log.i(TAG, "Got from server: " + inputLine);
+	        	if(inputLine == null || inputLine.isEmpty() || inputLine.indexOf(',') == -1){
+	        		Log.e(TAG, "inputLine is malformed, exiting");
 	        		break;
-				Log.i(TAG, "Got from server: " + inputLine);
-				mSensorManager.registerListener(this, mAccelerometer, SensorManager.SENSOR_DELAY_FASTEST);
-				for(long i = 0; i < 10000000; i++);
+	        	}
+	        	if(inputLine.equals("close")){
+	        		Log.e(TAG, "Got socket close instruction from server, exiting");
+	        		break;
+	        	}
+				
+				String instruction = inputLine.substring(0, inputLine.indexOf(','));
+				String port = inputLine.substring(inputLine.lastIndexOf(',')+1);
+				Log.i(TAG, "Instruction: " + instruction + ", Port: " + port);
+				
+				Thread operation = null;
+				if(instruction.equals("ON")){
 					
+				}else{
+					
+				}
+				mSensorManager.registerListener(this, mAccelerometer, SensorManager.SENSOR_DELAY_FASTEST);
+				//for(long i = 0; i < 10000000; i++);
+				Log.i(TAG, "Sending to server: " + x + "," + y + "," + z);	
 				out.println(x + "," + y + "," + z);
 				
 				mSensorManager.unregisterListener(this);
@@ -101,9 +118,10 @@ public class AccelerometerThread extends Device implements SensorEventListener {
 
 	@Override
 	public void onSensorChanged(SensorEvent event) {
+		//Log.i(TAG, "Inside onSensorChanged");
 		x = event.values[0];
-		y = event.values[0];
-		z = event.values[0];
+		y = event.values[1];
+		z = event.values[2];
 	}
 
 }

@@ -62,17 +62,24 @@ public class LEDThread extends Device{
         while(true){
 	        try {
 	        	char c;
-	        	int charCount = 0;
-	        	while((c = (char)in.read()) != '\n' && charCount < 100){
-	        		
+	        	buf = new StringBuffer();
+	        	while((c = (char)in.read()) != '\n'){
 	        		Log.i(TAG, "char: " + c);
 	        		buf.append(c);
-	        		charCount++;
 	        	}
 	        	inputLine = buf.toString();
-	        	if(inputLine.equals("close"))
+	        	Log.i(TAG, "Got from server: " + inputLine);
+	        	
+	        	if(inputLine == null || inputLine.isEmpty()){
+	        		Log.e(TAG, "inputLine is malformed, continue");
+	        		continue;
+	        	}
+	        	
+	        	if(inputLine.equals("close")){
+	        		Log.e(TAG, "Got socket close instruction from server, exiting");
 	        		break;
-				Log.i(TAG, "Got from server: " + inputLine);
+	        	}
+				
 	            
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
@@ -85,12 +92,13 @@ public class LEDThread extends Device{
 			Log.i(TAG, "Instruction: " + instruction + ", Port: " + port);
 			Thread operation = null;
 			if(instruction.equals("ON")){
-				operation = new Thread(new performLEDOperation(800, 0, Integer.parseInt(port)));
+				operation = new Thread(new performLEDOperation(0, 0, Integer.parseInt(port)));
 				operation.start();
 			}else{
-				operation = new Thread(new performLEDOperation(0, 1, Integer.parseInt(port)));
+				operation = new Thread(new performLEDOperation(0, 100, Integer.parseInt(port)));
 				operation.start();
 			}
+			//buf.delete(0, buf.length());
         }
         
         try {
@@ -135,7 +143,11 @@ public class LEDThread extends Device{
 				e.printStackTrace();
 				return;
 			}
-	        out.println("OK");
+	        if(offTime == 0)
+	        	out.println("LED ON");
+	        else
+	        	out.println("LED OFF");
+
 	        try {
 				clientSocket.close();
 			} catch (IOException e) {
@@ -155,8 +167,6 @@ public class LEDThread extends Device{
 		    nm.notify(idLED, notif);
 		    Log.v(TAG, "Finished flashLED");
 	    }
-
-		
     }
     
 }

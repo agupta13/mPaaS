@@ -27,8 +27,8 @@ public class LaunchThread implements Runnable {
 	public LaunchThread(Context c, int port){
 		context = c;
 		CloudBridgeManagementPort = port;
-		deviceList.add(new LEDThread(02, "LED", context));
-		deviceList.add(new AccelerometerThread(03, "Accelerometer", context));
+		deviceList.add(0, new LEDThread(02, "LED", context));
+		//deviceList.add(1, new AccelerometerThread(03, "Accelerometer", context));
 	}
 	
 	@Override
@@ -53,7 +53,7 @@ public class LaunchThread implements Runnable {
 			return;
 		}
         
-        StringBuffer mgmtData = new StringBuffer(getLocalIpAddress() +  "," + androidPlatform);
+        StringBuffer mgmtData = new StringBuffer(getLocalIpAddress() +  "," + androidPlatform + ",");
         for(Device d: deviceList){
         	mgmtData.append(d.getDevId());
         	mgmtData.append(",");
@@ -72,7 +72,7 @@ public class LaunchThread implements Runnable {
         		Log.i(TAG, "char: " + c);
         		buf.append(c);
         	}
-        	inputLine = buf.toString();
+        	inputLine = buf.toString();	
 			Log.i(TAG, "Got from server: " + inputLine);
             
 		} catch (IOException e) {
@@ -87,6 +87,11 @@ public class LaunchThread implements Runnable {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+        
+        if(inputLine == null || inputLine.isEmpty()){			//no need for "close" for this socket, accepts data only once
+    		Log.e(TAG, "inputLine is malformed, exiting");
+    		return;
+    	}
         
         StringTokenizer str = new StringTokenizer(inputLine, ",");
         String port = null;		
