@@ -49,6 +49,12 @@ class ThreadedTCPRequestHandler_mc(SocketServer.BaseRequestHandler):
             globalCloud.MgmtHash[mac] = My_Mgmt_Obj
 	else:
 	    print "Mobile client already hashed"
+	    l=len(globalCloud.MgmtHash[mac].conn)
+	    while(l!=0):
+		l=l-1
+		print "Closing socket",globalCloud.MgmtHash[mac].conn[l]
+		globalCloud.MgmtHash[mac].conn[l].close()
+		
 	    globalCloud.MgmtHash[mac].conn=[]     
         ## Create ports numbers and send that back to the client
         response = ""
@@ -134,11 +140,11 @@ class ThreadedTCPRequestHandler_cp(SocketServer.BaseRequestHandler):
                 print "Received data sent to CP:",data
                 rinstr.soc_data.close()            
             else:
-                print 'Received Connection from : ', addr
+               # print 'Received Connection from : ', addr
                 while(1):
                     datad = conn.recv(22)
 		    if len(datad)==22:
-                        print "Received data from MC:",datad+" len:",len(datad)
+                        #print "Received data from MC:",datad+" len:",len(datad)
 			datas = datad.split('!')[0]
 			
 			if(len(datas.split(','))==3):
@@ -159,7 +165,7 @@ class ThreadedTCPRequestHandler_cp(SocketServer.BaseRequestHandler):
                                 z=-1*z
                                 zs=1
 			    response = ""+str(x)+","+str(xs)+","+str(y)+","+str(ys)+","+str(z)+","+str(zs)+"!"
-                            print "before padding:",response
+                            #print "before padding:",response
 			    if len(response)<21:
 			        x=len(response)
 			        while(x!=21):
@@ -168,7 +174,7 @@ class ThreadedTCPRequestHandler_cp(SocketServer.BaseRequestHandler):
 			#response = "1000,1,1000,0,1000,0\n" 
                             try:
                                 self.request.sendall(response)
-                                print "Sent to CP:",response
+                                #print "Sent to CP:",response
                                 #self.wfile.write(response)
                             except IOError as e:
                                 print "WARN: socket closed unexpectedly"
@@ -182,7 +188,7 @@ class ThreadedTCPRequestHandler_cp(SocketServer.BaseRequestHandler):
             self.request.sendall(data)
             
         
-        
+        print "MC handler is done" 
 
         
         
