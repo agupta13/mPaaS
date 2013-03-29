@@ -20,6 +20,7 @@
 
 static int port = 9998;
 static int debug = 0;
+static int accx,accy,accz;
 
 struct cldaccl{
     ksocket_t sockfd_globl;
@@ -122,6 +123,9 @@ int thread_fn() {
                 input_report_abs(cloudaccl_input_dev, ABS_Y, ay);
                 input_report_abs(cloudaccl_input_dev, ABS_Z, az);
                 input_sync(cloudaccl_input_dev); 
+                accx = ax;
+                accy = ay;
+                accz = az;
                 ctr--;
                 cnt++;
                 //printk(KERN_ALERT "Reported(%d)::ax:%d,ay:%d,az:%d\n", cnt,ax,ay,az);  
@@ -222,10 +226,48 @@ static ssize_t write_rate(struct device *dev,
 /* Attach the "rate" sysfs  */
 DEVICE_ATTR(rate, 0644, NULL, write_rate);
 
+static ssize_t read_accx(struct device *dev,
+          struct device_attribute *attr,
+          char *buffer){
+    if (debug==1)
+	printk ("read_accx callled\n");
+    return sprintf(buffer, "%d\n",accx);
+}
+
+/* Attach the "accx" sysfs  */
+DEVICE_ATTR(sax, 0644, read_accx, NULL);
+
+static ssize_t read_accy(struct device *dev,
+          struct device_attribute *attr,
+          char *buffer){
+    if (debug==1)
+	printk ("read_accy callled\n");
+    return sprintf(buffer, "%d\n",accy);
+}
+
+/* Attach the "accx" sysfs  */
+DEVICE_ATTR(say, 0644, read_accy, NULL);
+
+static ssize_t read_accz(struct device *dev,
+          struct device_attribute *attr,
+          char *buffer){
+    if (debug==1)
+	printk ("read_accz callled\n");
+    return sprintf(buffer, "%d\n",accz);
+}
+
+/* Attach the "accx" sysfs  */
+DEVICE_ATTR(saz, 0644, read_accz, NULL);
+
+
+
 /* Attribute Descriptor */
 static struct attribute *cloudaccl_attrs[] = {
     &dev_attr_enable.attr,
     &dev_attr_rate.attr,
+    &dev_attr_sax.attr,
+    &dev_attr_say.attr,
+    &dev_attr_saz.attr,
     NULL
 };
 
@@ -239,6 +281,9 @@ int __init cloudaccl_init(void){
     
     int err;
     enable_count = 0;
+    accx = 0;
+    accy = 0;
+    accz = 0;
     ca = kzalloc(sizeof(*ca), GFP_KERNEL);
     
     if(!ca){

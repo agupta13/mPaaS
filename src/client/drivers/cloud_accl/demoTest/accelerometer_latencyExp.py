@@ -5,7 +5,7 @@ import os, sys, string, time, datetime
 
 scenario = 1
 screen = 1
-sleep_time = 10
+sleep_time = 50
 data_dir = "~/mPaaS/data_analysis/"
 
 com_make = "make clean && make"
@@ -27,6 +27,8 @@ print "System ready for experiments"
 
 print "Enable reading"
 os.system(com_runON)
+time.sleep(1)
+os.system("python demo.py &")
 time.sleep(sleep_time)
 print "Disable reading"
 os.system(com_runOFF)
