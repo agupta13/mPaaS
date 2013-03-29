@@ -47,12 +47,14 @@ class ThreadedTCPRequestHandler_mc(SocketServer.BaseRequestHandler):
         if(mobileClientCheck(mac)):
             My_Mgmt_Obj = MgmtClass.MgmtObj(mac,dev, platform,0,[])
             globalCloud.MgmtHash[mac] = My_Mgmt_Obj
-        
+	else:
+	    print "Mobile client already hashed"
+	    globalCloud.MgmtHash[mac].conn=[]     
         ## Create ports numbers and send that back to the client
         response = ""
         ports = []
         for i in range(0,len(dev)):
-            portn = random.randint(1, 1000)+10000
+            portn = random.randint(40000, 50000)+10000
             ports.append(portn)
             print portn
             if(i==len(dev)-1):
@@ -138,39 +140,42 @@ class ThreadedTCPRequestHandler_cp(SocketServer.BaseRequestHandler):
 		    if len(datad)==22:
                         print "Received data from MC:",datad+" len:",len(datad)
 			datas = datad.split('!')[0]
-			x=datas.split(',')[0]
-			xs=0
-			if x<0:
-			    x=-1*x
-			    xs=1
-			y=datas.split(',')[1]
-                        ys=0
-                        if y<0:
-                            y=-1*y
-                            ys=1
-			z=datas.split(',')[2]
-                        zs=0
-                        if z<0:
-                            z=-1*z
-                            zs=1
-			response = ""+str(x)+","+str(xs)+","+str(y)+","+str(ys)+","+str(z)+","+str(zs)+"!"
-                        print "before padding:",response
-			if len(response)<21:
-			    x=len(response)
-			    while(x!=21):
-				response = response+"0"
-				x=x+1
+			
+			if(len(datas.split(','))==3):
+			    x=datas.split(',')[0]
+			
+			    xs=0
+			    if x<0:
+			        x=-1*x
+			        xs=1
+			    y=datas.split(',')[1]
+                            ys=0
+                            if y<0:
+                                y=-1*y
+                                ys=1
+			    z=datas.split(',')[2]
+                            zs=0
+                            if z<0:
+                                z=-1*z
+                                zs=1
+			    response = ""+str(x)+","+str(xs)+","+str(y)+","+str(ys)+","+str(z)+","+str(zs)+"!"
+                            print "before padding:",response
+			    if len(response)<21:
+			        x=len(response)
+			        while(x!=21):
+				    response = response+"0"
+				    x=x+1
 			#response = "1000,1,1000,0,1000,0\n" 
-                        try:
-                            self.request.sendall(response)
-                            print "Sent to CP:",response
-                            #self.wfile.write(response)
-                        except IOError as e:
-                            print "WARN: socket closed unexpectedly"
-                            #rinstr.soc_data.sendall("close\n")
-                            rinstr.soc_data.close()
-			    conn.close()
-                            break
+                            try:
+                                self.request.sendall(response)
+                                print "Sent to CP:",response
+                                #self.wfile.write(response)
+                            except IOError as e:
+                                print "WARN: socket closed unexpectedly"
+                                #rinstr.soc_data.sendall("close\n")
+                                rinstr.soc_data.close()
+			        conn.close()
+                                break
         else:
             print "Error: Instruction Execution"
             data = "-1"
