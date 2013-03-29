@@ -7,6 +7,8 @@ import socket
 import sys
 import random
 
+bridgeIP = "152.14.93.160"
+
 
 ## Instruction Queue Scheduler thread
 class IQscheduler(threading.Thread):
@@ -48,7 +50,7 @@ def exec_instr(instr):
     print "Sending:",data
     
     # Start the listening server before sending the port adresses to avoid concurrency issues
-    HOST, PORT = "localhost",portd
+    HOST, PORT = "152.14.93.160",portd
     soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     soc.bind((HOST, PORT))
     soc.listen(1)

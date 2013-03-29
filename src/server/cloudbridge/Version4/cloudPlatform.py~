@@ -2,8 +2,10 @@ import socket
 import sys
 devtype=0
 
+bridgeIP = "152.14.93.160"
+
 if devtype==0:
-    HOST, PORT = "localhost", 9998
+    HOST, PORT = bridgeIP, 9998
     # devid,instr,params...
     data = "02,led_on,10,10"
 
@@ -24,7 +26,7 @@ if devtype==0:
     print "Received: {}".format(received)
     
 if devtype==1:
-    HOST, PORT = "localhost", 9998
+    HOST, PORT = bridgeIP, 9998
     # devid,instr,params...
     data = "03,ON,10,10"
 

@@ -11,6 +11,8 @@ import policyCloud
 import MgmtClass
 import random
 
+bridgeIP = "152.14.93.160"
+
 def mobileClientCheck(mac):
 #Check the global hash table to check if we have already seen the mobileclient
 	print "In mobile client check function\n"
@@ -57,14 +59,14 @@ class ThreadedTCPRequestHandler_mc(SocketServer.BaseRequestHandler):
                 response = response+str(portn)
             else:
                 response = response+str(portn)+","
-            	    
-		print response  
+        response = response +"\n"
+        print response  
 		
 		  
         # Time to create socket on these ports
         socks = []
         for i in range(0,len(ports)):
-            HOST, PORT = "localhost",ports[i]
+            HOST, PORT = bridgeIP,ports[i]
             soc_dev = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             soc_dev.bind((HOST, PORT))
             soc_dev.listen(1)
@@ -118,8 +120,10 @@ class ThreadedTCPRequestHandler_cp(SocketServer.BaseRequestHandler):
         if portd!=-1:
             print "Started server over the port:",portd
             print "test:",rinstr.instr_send
+            
             rinstr.soc_instr.sendall(rinstr.instr_send)
             conn, addr = rinstr.soc_data.accept()
+            print "connection accepted"
             if(devtype==0):            
                 print 'Received Connection from mobile client: ', addr
                 data = conn.recv(1024)
@@ -130,18 +134,43 @@ class ThreadedTCPRequestHandler_cp(SocketServer.BaseRequestHandler):
             else:
                 print 'Received Connection from : ', addr
                 while(1):
-                    data = conn.recv(21)
-                    print "Received data from MC"
-                    response = "1000,1,1000,0,1000,0\n" 
-                    try:
-                        self.request.sendall(response)
-                        print "Sent to CP"
-                        #self.wfile.write(response)
-                    except IOError as e:
-                        print "WARN: socket closed unexpectedly"
-                        #rinstr.soc_data.sendall("close\n")
-                        rinstr.soc_data.close()
-                        break
+                    datad = conn.recv(22)
+		    if len(datad)==22:
+                        print "Received data from MC:",datad+" len:",len(datad)
+			datas = datad.split('!')[0]
+			x=datas.split(',')[0]
+			xs=0
+			if x<0:
+			    x=-1*x
+			    xs=1
+			y=datas.split(',')[1]
+                        ys=0
+                        if y<0:
+                            y=-1*y
+                            ys=1
+			z=datas.split(',')[2]
+                        zs=0
+                        if z<0:
+                            z=-1*z
+                            zs=1
+			response = ""+str(x)+","+str(xs)+","+str(y)+","+str(ys)+","+str(z)+","+str(zs)+"!"
+                        print "before padding:",response
+			if len(response)<21:
+			    x=len(response)
+			    while(x!=21):
+				response = response+"0"
+				x=x+1
+			#response = "1000,1,1000,0,1000,0\n" 
+                        try:
+                            self.request.sendall(response)
+                            print "Sent to CP:",response
+                            #self.wfile.write(response)
+                        except IOError as e:
+                            print "WARN: socket closed unexpectedly"
+                            #rinstr.soc_data.sendall("close\n")
+                            rinstr.soc_data.close()
+			    conn.close()
+                            break
         else:
             print "Error: Instruction Execution"
             data = "-1"
@@ -164,7 +193,7 @@ if __name__ == "__main__":
     
     # Initialize the server for listening to "Mobile Client" requests
 
-    HOST, PORT = "localhost", 9006
+    HOST, PORT = bridgeIP, 9006
     server_mc = ThreadedTCPServer((HOST, PORT), ThreadedTCPRequestHandler_mc)
     ip, port = server_mc.server_address
     server_thread_mc = threading.Thread(target=server_mc.serve_forever)
@@ -174,7 +203,7 @@ if __name__ == "__main__":
     
     # Initialize the server for listening to "cloud platforms" requests
 
-    HOST, PORT = "localhost", 9998
+    HOST, PORT = bridgeIP, 9998
     server_cp = ThreadedTCPServer((HOST, PORT), ThreadedTCPRequestHandler_cp)
     ip, port = server_cp.server_address
     server_thread = threading.Thread(target=server_cp.serve_forever)
